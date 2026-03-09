@@ -29,6 +29,8 @@ export interface CreateSessionRequest {
   headless?: boolean;
   timeout?: number;
   clientId?: string;
+  /** When true, only allocate from backends that return wsEndpoint (not WebDriver-only). */
+  wsRequired?: boolean;
 }
 
 export interface CreateSessionResponse {
@@ -162,7 +164,7 @@ export class Allocator {
       throw new AllocatorError(`Client '${clientId}' has reached max concurrent sessions (${this.opts.maxPerClient})`, 429);
     }
 
-    const backend = this.findBackend(browser);
+    const backend = this.findBackend(browser, req.wsRequired);
     if (!backend) {
       throw new AllocatorError(`No backend available for browser '${browser}'`, 503);
     }
@@ -324,10 +326,11 @@ export class Allocator {
   }
 
   /** Find a healthy backend that supports this browser. Falls back to unhealthy if none healthy. */
-  private findBackend(browser: BrowserType): Backend | undefined {
+  private findBackend(browser: BrowserType, wsRequired?: boolean): Backend | undefined {
     let fallback: Backend | undefined;
     for (const [id, backend] of this.backends) {
       if (!backend.supports.has(browser)) continue;
+      if (wsRequired && backend.protocol !== "ws") continue;
       if (this.backendHealth.get(id)) return backend;
       if (!fallback) fallback = backend;
     }

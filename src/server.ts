@@ -85,6 +85,7 @@ export function createApp(opts?: AppOptions): AppInstance {
         headless: body.headless,
         timeout: body.timeout,
         clientId: body.clientId,
+        wsRequired: body.wsRequired,
       });
 
       // Construct full WS URL for WS-based sessions
@@ -121,6 +122,44 @@ export function createApp(opts?: AppOptions): AppInstance {
     if (!session) return c.json({ error: "Session not found" }, 404);
     await allocator.destroySession(session.id);
     return c.json({ ok: true });
+  });
+
+  app.get("/sessions/:id/screenshot", requireAuth, async (c) => {
+    const session = allocator.getSession(c.req.param("id"))
+    if (!session) return c.json({ error: 'Session not found' }, 404)
+
+    if (session.wsEndpoint) {
+      return c.json({ error: 'Use CDP Page.captureScreenshot for WebSocket sessions' }, 400)
+    }
+
+    if (!session.webdriverUrl || !session.webdriverSessionId) {
+      return c.json({ error: 'Session has no WebDriver endpoint' }, 500)
+    }
+
+    const wdScreenshotUrl = `${session.webdriverUrl}/session/${session.webdriverSessionId}/screenshot`
+    const res = await fetch(wdScreenshotUrl)
+    if (!res.ok) {
+      const body = await res.text().catch(() => '')
+      log.error('screenshot: WebDriver request failed', {
+        sessionId: session.id,
+        status: res.status,
+        body,
+      })
+      return c.json({ error: `WebDriver screenshot failed: ${res.status}` }, 502)
+    }
+
+    const json = await res.json() as { value: string }
+    if (!json.value) {
+      return c.json({ error: 'WebDriver returned empty screenshot' }, 502)
+    }
+
+    const png = Buffer.from(json.value, 'base64')
+    allocator.touchSession(session.id)
+    return c.body(png, 200, {
+      'Content-Type': 'image/png',
+      'Content-Length': String(png.byteLength),
+      'Cache-Control': 'no-store',
+    })
   });
 
   // --- Backend registry ---
@@ -216,7 +255,7 @@ export function createApp(opts?: AppOptions): AppInstance {
   const addr = server.address();
   const port = typeof addr === "object" && addr ? addr.port : requestedPort;
 
-  log.info(`agent-browser-farm listening on :${port}`);
+  log.info(`browser-farm listening on :${port}`);
 
   // WS upgrade
   server.on("upgrade", (req: IncomingMessage, socket: Duplex, head: Buffer) => {

@@ -8,6 +8,7 @@ function mockBackend(): Backend {
   return {
     id: "mock-client-test",
     type: "mock",
+    protocol: "ws" as const,
     supports: new Set<BrowserType>(["chrome", "firefox", "webkit"]),
     async createSession({ browser }) {
       return {

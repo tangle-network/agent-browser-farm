@@ -29,6 +29,7 @@ interface EmulatorInstance {
 export class AndroidBackend implements Backend {
   readonly id: string;
   readonly type = "android";
+  readonly protocol = "ws" as const;
   readonly supports: ReadonlySet<BrowserType> = new Set(["android-chrome"]);
 
   private avdName: string;

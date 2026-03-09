@@ -43,6 +43,7 @@ interface TemplateMap {
 export class IosSafariBackend implements Backend {
   readonly id: string;
   readonly type = "ios-safari";
+  readonly protocol = "webdriver" as const;
   readonly supports: ReadonlySet<BrowserType> = new Set(["ios-safari"]);
 
   private appiumUrl: string;

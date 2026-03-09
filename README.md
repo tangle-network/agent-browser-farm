@@ -1,4 +1,4 @@
-# agent-browser-farm
+# browser-farm
 
 Session-scoped browser allocation service. Unified API over Browserless, Playwright, Appium, and native drivers — covering every major platform.
 
@@ -28,11 +28,11 @@ This starts Browserless (Chrome, Firefox, WebKit) and the farm on port 9222.
 ### Programmatic
 
 ```bash
-pnpm add agent-browser-farm
+pnpm add @tangle-network/browser-farm
 ```
 
 ```typescript
-import { createApp, BrowserlessBackend } from 'agent-browser-farm';
+import { createApp, BrowserlessBackend } from '@tangle-network/browser-farm';
 
 const app = createApp({
   port: 9222,
@@ -48,11 +48,11 @@ process.on('SIGTERM', () => app.shutdown());
 ## Client SDK
 
 ```bash
-pnpm add agent-browser-farm
+pnpm add @tangle-network/browser-farm
 ```
 
 ```typescript
-import { BrowserFarmClient } from 'agent-browser-farm/client';
+import { BrowserFarmClient } from '@tangle-network/browser-farm/client';
 
 const farm = new BrowserFarmClient('http://localhost:9222', {
   token: 'your-api-token', // optional
@@ -222,7 +222,7 @@ Remove a backend (fails if it has active sessions).
 Wraps [Browserless](https://github.com/browserless/browserless) Docker containers. Handles Chrome, Firefox, and WebKit via Playwright protocol over WebSocket.
 
 ```typescript
-import { BrowserlessBackend } from 'agent-browser-farm';
+import { BrowserlessBackend } from '@tangle-network/browser-farm';
 
 new BrowserlessBackend({
   url: 'http://localhost:3000',
@@ -235,7 +235,7 @@ new BrowserlessBackend({
 Uses `playwright.webkit.launchServer()` for WebKit sessions. Same rendering engine as Safari. Supports device emulation profiles (iPhone 15, iPad Pro 11, iPad Air, etc.).
 
 ```typescript
-import { PlaywrightBackend } from 'agent-browser-farm';
+import { PlaywrightBackend } from '@tangle-network/browser-farm';
 
 new PlaywrightBackend({ headless: true });
 ```
@@ -247,7 +247,7 @@ Requires: `pnpm add playwright-core && pnpm exec playwright install webkit`
 Uses macOS's built-in `safaridriver`. Real Safari.app — not emulated. WebDriver HTTP protocol.
 
 ```typescript
-import { SafariDesktopBackend } from 'agent-browser-farm';
+import { SafariDesktopBackend } from '@tangle-network/browser-farm';
 
 new SafariDesktopBackend({ capacity: 4 });
 ```
@@ -259,7 +259,7 @@ Requires: macOS, `safaridriver --enable` (one-time sudo), Safari > Develop > All
 Real Safari on iOS simulators via Appium + XCUITest. Supports iPhone and iPad device types. Clones from pre-warmed templates for fast startup (~3-5s).
 
 ```typescript
-import { IosSafariBackend } from 'agent-browser-farm';
+import { IosSafariBackend } from '@tangle-network/browser-farm';
 
 new IosSafariBackend({
   appiumUrl: 'http://localhost:4723',
@@ -278,7 +278,7 @@ Setup: `./scripts/setup-mac-host.sh`
 Real Safari on physical iOS devices via Appium. Requires USB connection and Apple Developer account for WDA code signing.
 
 ```typescript
-import { IosDeviceBackend } from 'agent-browser-farm';
+import { IosDeviceBackend } from '@tangle-network/browser-farm';
 
 new IosDeviceBackend({
   appiumUrl: 'http://localhost:4723',
@@ -295,7 +295,7 @@ new IosDeviceBackend({
 Android Chrome via direct ADB + CDP. No Appium — uses Chrome's built-in CDP protocol. Same WebSocket protocol as desktop Chrome.
 
 ```typescript
-import { AndroidBackend } from 'agent-browser-farm';
+import { AndroidBackend } from '@tangle-network/browser-farm';
 
 new AndroidBackend({
   avdName: 'chrome-farm',
@@ -310,7 +310,7 @@ Setup: `./scripts/setup-android.sh`
 Physical Android devices connected via USB. Auto-discovers devices or accepts explicit serial list.
 
 ```typescript
-import { AndroidDeviceBackend } from 'agent-browser-farm';
+import { AndroidDeviceBackend } from '@tangle-network/browser-farm';
 
 new AndroidDeviceBackend({
   devices: ['SERIAL1', 'SERIAL2'], // optional — auto-discovers if omitted
@@ -348,7 +348,7 @@ docker compose up -d
 
 ```
 Linux/Cloud Host                    macOS Host (Mac Mini/Studio)
-├── agent-browser-farm              ├── Appium (port 4723)
+├── browser-farm              ├── Appium (port 4723)
 ├── Browserless (Docker)            ├── Xcode + iOS simulators
 └── Android SDK + emulators         ├── safaridriver
                                     └── WebDriverAgent

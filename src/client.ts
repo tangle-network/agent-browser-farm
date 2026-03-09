@@ -1,10 +1,10 @@
 /**
- * Zero-dependency client SDK for agent-browser-farm.
+ * Zero-dependency client SDK for browser-farm.
  *
  * Works in Node.js, Deno, Bun, and browsers. Uses native fetch + WebSocket.
  *
  * Usage:
- *   import { BrowserFarmClient } from 'agent-browser-farm/client';
+ *   import { BrowserFarmClient } from '@tangle-network/browser-farm/client';
  *   const client = new BrowserFarmClient('http://localhost:9222', { token: '...' });
  *
  *   // Desktop Chrome via CDP

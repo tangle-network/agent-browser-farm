@@ -1,12 +1,12 @@
 # Integration Guide
 
-agent-browser-farm is a standalone background service. It doesn't embed into other packages — other systems call its HTTP API to allocate browser sessions and connect to them.
+browser-farm is a standalone background service. It doesn't embed into other packages — other systems call its HTTP API to allocate browser sessions and connect to them.
 
 ## Integration Points
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                     agent-browser-farm                       │
+│                     browser-farm                       │
 │                        (port 9222)                           │
 │                                                              │
 │  POST /sessions → allocate browser → return wsEndpoint       │
@@ -16,7 +16,7 @@ agent-browser-farm is a standalone background service. It doesn't embed into oth
            │                                  │
            ▼                                  ▼
 ┌─────────────────────┐          ┌─────────────────────────┐
-│ agent-dev-container  │          │  agent-browser-driver    │
+│ agent-dev-container  │          │  browser-agent-driver    │
 │   (orchestrator)     │          │  (AI browser agent)      │
 │                      │          │                          │
 │ Allocates sessions   │          │ Connects to wsEndpoint   │
@@ -27,7 +27,7 @@ agent-browser-farm is a standalone background service. It doesn't embed into oth
 
 ## agent-dev-container (Orchestrator)
 
-The orchestrator manages sandboxed sidecars. Each sidecar runs agent-browser-driver. The orchestrator is responsible for allocating a browser session from the farm and injecting the endpoint into the sidecar's environment.
+The orchestrator manages sandboxed sidecars. Each sidecar runs browser-agent-driver. The orchestrator is responsible for allocating a browser session from the farm and injecting the endpoint into the sidecar's environment.
 
 ### Existing Infrastructure
 
@@ -46,7 +46,7 @@ This is a static mapping — all sidecars share the same endpoints. For the farm
 In the orchestrator's sidecar startup flow (container-config.ts), add a farm allocation step:
 
 ```typescript
-import { BrowserFarmClient } from 'agent-browser-farm/client'
+import { BrowserFarmClient } from 'browser-farm/client'
 
 const farm = new BrowserFarmClient(process.env.BROWSER_FARM_URL!, {
   token: process.env.BROWSER_FARM_TOKEN,
@@ -90,7 +90,7 @@ BROWSER_FARM_DEFAULT_BROWSER=chrome
 
 The Sandbox SDK doesn't need to know about the farm. The orchestrator allocates sessions and injects `BROWSER_ENDPOINT` — the sidecar's driver just connects to whatever endpoint it receives. The farm is invisible to SDK consumers.
 
-## agent-browser-driver (AI Browser Agent)
+## browser-agent-driver (AI Browser Agent)
 
 The driver currently launches browsers locally:
 
@@ -167,7 +167,7 @@ No blueprint-specific integration needed. The farm is a shared service that the 
 ## Integration Order
 
 1. **Deploy the farm** — Docker Compose on a Linux host (see DEPLOYMENT.md)
-2. **Update agent-browser-driver** — Add `BROWSER_ENDPOINT` env check, use `connectOverCDP()` when set
+2. **Update browser-agent-driver** — Add `BROWSER_ENDPOINT` env check, use `connectOverCDP()` when set
 3. **Update agent-dev-container** — Add per-sidecar session allocation/teardown in the orchestrator
 4. **Optional: abd-app** — Add browser preview streaming if needed
 
@@ -178,13 +178,13 @@ Steps 2 and 3 are independent and can be done in parallel. The farm runs standal
 ```
 ┌─── Cloud / Linux Host ─────────────────────────┐
 │                                                  │
-│  agent-browser-farm (:9222)                      │
+│  browser-farm (:9222)                      │
 │       ├── Browserless (:3000, internal)          │
 │       └── Android emulators (optional)           │
 │                                                  │
 │  agent-dev-container (orchestrator)              │
 │       └── Sidecars (each gets BROWSER_ENDPOINT)  │
-│             └── agent-browser-driver             │
+│             └── browser-agent-driver             │
 │                  └── connectOverCDP(endpoint)     │
 │                                                  │
 └──────────────────────────────────────────────────┘

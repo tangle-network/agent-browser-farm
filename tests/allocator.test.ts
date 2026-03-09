@@ -11,6 +11,7 @@ function mockBackend(opts?: { id?: string; type?: string; supports?: BrowserType
   return {
     id,
     type,
+    protocol: "ws" as const,
     supports,
     async createSession({ browser }) {
       const backendId = `mock-${crypto.randomUUID().slice(0, 8)}`;

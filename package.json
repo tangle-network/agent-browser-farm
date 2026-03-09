@@ -1,10 +1,10 @@
 {
-  "name": "agent-browser-farm",
+  "name": "@tangle-network/browser-farm",
   "version": "0.1.0",
   "description": "Session-scoped browser allocation service. Unified API over Browserless, Playwright, Appium, and native drivers.",
   "repository": {
     "type": "git",
-    "url": "https://github.com/tangle-network/agent-browser-farm.git"
+    "url": "https://github.com/tangle-network/browser-farm.git"
   },
   "keywords": ["browser", "automation", "playwright", "selenium", "appium", "safari", "ios", "android", "cdp", "webdriver"],
   "type": "module",
@@ -21,7 +21,7 @@
     }
   },
   "bin": {
-    "agent-browser-farm": "dist/main.js"
+    "browser-farm": "dist/main.js"
   },
   "files": [
     "dist",

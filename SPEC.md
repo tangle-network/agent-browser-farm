@@ -1,4 +1,4 @@
-# agent-browser-farm
+# browser-farm
 
 Session-scoped browser allocation service. Wraps proven open-source tools with a unified allocation API, adding mobile device support and multi-tenant isolation.
 
@@ -29,7 +29,7 @@ No single tool covers all three. Browserless handles desktop. Appium handles mob
 
 ```
                     ┌──────────────────────────────────────┐
-                    │       agent-browser-farm              │
+                    │       browser-farm              │
                     │                                       │
   POST /sessions ──│  Allocator                             │
                     │    ├─ route by capability             │
@@ -112,7 +112,7 @@ Register, deregister, list backend hosts.
 
 ```
 Linux Host
-├── agent-browser-farm (Node.js process)
+├── browser-farm (Node.js process)
 └── Browserless (Docker container)
     └── Chromium, Firefox, WebKit
 ```
@@ -125,7 +125,7 @@ The farm service runs alongside, routes sessions to Browserless, adds auth + ten
 
 ```
 Linux Host
-├── agent-browser-farm
+├── browser-farm
 ├── Browserless (Docker)
 └── Appium Server
     └── Android SDK + emulator AVDs (snapshot-booted)
@@ -137,7 +137,7 @@ Android emulators run on the same Linux host. Appium manages lifecycle. Farm rou
 
 ```
 Linux Host                        macOS Host (Mac Mini/Studio)
-├── agent-browser-farm            ├── Appium Server
+├── browser-farm            ├── Appium Server
 ├── Browserless (Docker)          ├── Xcode + iOS Simulators
 └── Appium (Android)              └── WebDriverAgent
                                        ↑
@@ -225,7 +225,7 @@ Farm registers Mac hosts as backends. `ios-safari` requests routed to available 
 ## Directory Structure
 
 ```
-agent-browser-farm/
+browser-farm/
 ├── src/
 │   ├── server.ts              # Hono HTTP + WS upgrade handler
 │   ├── allocator.ts           # Session allocation, routing, lifecycle

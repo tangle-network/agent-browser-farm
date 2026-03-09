@@ -27,6 +27,7 @@ interface DeviceSession {
 export class AndroidDeviceBackend implements Backend {
   readonly id: string;
   readonly type = "android-device";
+  readonly protocol = "ws" as const;
   readonly supports: ReadonlySet<BrowserType> = new Set(["android-chrome"]);
 
   private deviceSerials: string[];

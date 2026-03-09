@@ -37,6 +37,7 @@ describe("Integration: full session lifecycle", () => {
     const backend: Backend = {
       id: "mock-echo",
       type: "mock",
+      protocol: "ws" as const,
       supports: new Set<BrowserType>(["chrome", "firefox", "webkit"]),
       async createSession({ browser }): Promise<BackendSession> {
         return {

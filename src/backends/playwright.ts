@@ -79,7 +79,8 @@ interface PlaywrightModule {
 export class PlaywrightBackend implements Backend {
   readonly id: string;
   readonly type = "playwright";
-  readonly supports: ReadonlySet<BrowserType> = new Set(["webkit", "ios-safari"]);
+  readonly protocol = "ws" as const;
+  readonly supports: ReadonlySet<BrowserType> = new Set(["webkit", "ios-safari", "safari"]);
 
   private servers = new Map<string, BrowserServer>();
   private pw: PlaywrightModule | null = null;

@@ -29,6 +29,7 @@ interface SafariSession {
 export class SafariDesktopBackend implements Backend {
   readonly id: string;
   readonly type = "safari-desktop";
+  readonly protocol = "webdriver" as const;
   readonly supports: ReadonlySet<BrowserType> = new Set(["safari"]);
 
   private sessions = new Map<string, SafariSession>();

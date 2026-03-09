@@ -1,6 +1,6 @@
 # Deployment Guide
 
-agent-browser-farm runs as a standalone service. It allocates browser sessions across backends and exposes them via a unified HTTP + WebSocket API.
+browser-farm runs as a standalone service. It allocates browser sessions across backends and exposes them via a unified HTTP + WebSocket API.
 
 ## Deployment Topologies
 
@@ -11,7 +11,7 @@ Single host, Docker Compose. Simplest path.
 ```
 ┌─── Linux/Cloud Host ───────────────┐
 │                                     │
-│  agent-browser-farm  (:9222)        │
+│  browser-farm  (:9222)        │
 │       │                             │
 │       └── Browserless  (:3000)      │
 │            ├── Chromium             │
@@ -22,8 +22,8 @@ Single host, Docker Compose. Simplest path.
 
 ```bash
 # Clone and start
-git clone https://github.com/tangle-network/agent-browser-farm.git
-cd agent-browser-farm
+git clone https://github.com/tangle-network/browser-farm.git
+cd browser-farm
 cp .env.example .env
 # Edit .env: set API_TOKEN
 docker compose up -d
@@ -40,7 +40,7 @@ Farm on a Linux host. Mac host(s) for iOS Safari and macOS Safari. Android emula
 ```
 ┌─── Linux Host ──────────────────────┐     ┌─── macOS Host (Mac Mini/Studio) ──┐
 │                                     │     │                                    │
-│  agent-browser-farm  (:9222)  ◄─────│─────│── Appium  (:4723)                 │
+│  browser-farm  (:9222)  ◄─────│─────│── Appium  (:4723)                 │
 │       │                             │     │    └── iOS Simulators (iPhone/iPad)│
 │       ├── Browserless  (:3000)      │     │                                    │
 │       │    ├── Chrome               │     │   safaridriver  (:9500+)           │
@@ -101,7 +101,7 @@ curl -X POST $FARM/backends \
 
 Or register programmatically in a startup script:
 ```typescript
-import { createApp, BrowserlessBackend, IosSafariBackend, AndroidBackend, SafariDesktopBackend } from 'agent-browser-farm'
+import { createApp, BrowserlessBackend, IosSafariBackend, AndroidBackend, SafariDesktopBackend } from 'browser-farm'
 
 const app = createApp({
   backends: [

@@ -31,6 +31,7 @@ interface PhysicalDeviceSession {
 export class IosDeviceBackend implements Backend {
   readonly id: string;
   readonly type = "ios-device";
+  readonly protocol = "webdriver" as const;
   readonly supports: ReadonlySet<BrowserType> = new Set(["ios-safari"]);
 
   private appiumUrl: string;

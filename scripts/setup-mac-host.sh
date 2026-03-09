@@ -27,7 +27,7 @@ TEMPLATE_NAME="${TEMPLATE_NAME:-farm-template}"
 IPAD_TEMPLATE_NAME="${IPAD_TEMPLATE_NAME:-farm-ipad-template}"
 SETUP_IPAD="${SETUP_IPAD:-true}"
 
-echo "=== agent-browser-farm: macOS host setup (iOS Safari) ==="
+echo "=== browser-farm: macOS host setup (iOS Safari) ==="
 echo ""
 echo "Config:"
 echo "  IOS_VERSION:         ${IOS_VERSION}"

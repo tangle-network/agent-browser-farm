@@ -18,6 +18,7 @@ import { log } from "../log.js";
 export class BrowserlessBackend implements Backend {
   readonly id: string;
   readonly type = "browserless";
+  readonly protocol = "ws" as const;
   readonly supports: ReadonlySet<BrowserType> = DESKTOP_BROWSERS;
 
   private baseUrl: string;

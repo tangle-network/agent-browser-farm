@@ -37,6 +37,9 @@ export interface Backend {
   /** Which browser types this backend handles */
   readonly supports: ReadonlySet<BrowserType>;
 
+  /** Session protocol: 'ws' for WebSocket (CDP/Playwright), 'webdriver' for WebDriver HTTP */
+  readonly protocol: 'ws' | 'webdriver';
+
   /** Create a browser session. Returns connection info. */
   createSession(opts: {
     browser: BrowserType;
