@@ -1,0 +1,33 @@
+services:
+  browserless:
+    image: ghcr.io/browserless/multi:latest
+    environment:
+      - CONCURRENT=${BROWSERLESS_CONCURRENT:-10}
+      - QUEUED=${BROWSERLESS_QUEUED:-5}
+      - TOKEN=${BROWSERLESS_TOKEN:-}
+      - TIMEOUT=${BROWSERLESS_TIMEOUT:-300000}
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    shm_size: "2g"
+    deploy:
+      resources:
+        limits:
+          memory: 4g
+
+  farm:
+    build: .
+    environment:
+      - PORT=9222
+      - BROWSERLESS_URL=http://browserless:3000
+      - BROWSERLESS_TOKEN=${BROWSERLESS_TOKEN:-}
+      - API_TOKEN=${API_TOKEN:-}
+      - MAX_SESSIONS=${MAX_SESSIONS:-20}
+      - MAX_PER_CLIENT=${MAX_PER_CLIENT:-5}
+      - SESSION_TIMEOUT=${SESSION_TIMEOUT:-300}
+      - IDLE_TIMEOUT=${IDLE_TIMEOUT:-300}
+    ports:
+      - "9222:9222"
+    depends_on:
+      - browserless
+    restart: unless-stopped

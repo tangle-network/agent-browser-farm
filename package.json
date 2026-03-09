@@ -1,0 +1,57 @@
+{
+  "name": "agent-browser-farm",
+  "version": "0.1.0",
+  "description": "Session-scoped browser allocation service. Unified API over Browserless, Playwright, Appium, and native drivers.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tangle-network/agent-browser-farm.git"
+  },
+  "keywords": ["browser", "automation", "playwright", "selenium", "appium", "safari", "ios", "android", "cdp", "webdriver"],
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./client": {
+      "import": "./dist/client.js",
+      "types": "./dist/client.d.ts"
+    }
+  },
+  "bin": {
+    "agent-browser-farm": "dist/main.js"
+  },
+  "files": [
+    "dist",
+    "docker-compose.yml",
+    "Dockerfile"
+  ],
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "build": "tsc",
+    "start": "node dist/main.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "lint": "tsc --noEmit",
+    "prepublishOnly": "pnpm run build",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down"
+  },
+  "license": "MIT",
+  "packageManager": "pnpm@10.22.0",
+  "dependencies": {
+    "@hono/node-server": "^1.19.11",
+    "hono": "^4.12.5",
+    "ws": "^8.19.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.3.5",
+    "@types/ws": "^8.18.1",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
+  }
+}
