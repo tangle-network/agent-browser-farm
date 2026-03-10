@@ -46,7 +46,7 @@ This is a static mapping — all sidecars share the same endpoints. For the farm
 In the orchestrator's sidecar startup flow (container-config.ts), add a farm allocation step:
 
 ```typescript
-import { BrowserFarmClient } from 'browser-farm/client'
+import { BrowserFarmClient } from '@tangle-network/browser-farm/client'
 
 const farm = new BrowserFarmClient(process.env.BROWSER_FARM_URL!, {
   token: process.env.BROWSER_FARM_TOKEN,

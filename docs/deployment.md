@@ -101,7 +101,7 @@ curl -X POST $FARM/backends \
 
 Or register programmatically in a startup script:
 ```typescript
-import { createApp, BrowserlessBackend, IosSafariBackend, AndroidBackend, SafariDesktopBackend } from 'browser-farm'
+import { createApp, BrowserlessBackend, IosSafariBackend, AndroidBackend, SafariDesktopBackend } from '@tangle-network/browser-farm'
 
 const app = createApp({
   backends: [
