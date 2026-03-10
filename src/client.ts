@@ -109,6 +109,18 @@ export class BrowserFarmClient {
     return res.backends;
   }
 
+  /** Capture a PNG screenshot of the browser session. */
+  async screenshot(sessionId: string): Promise<Blob> {
+    const res = await fetch(`${this.baseUrl}/sessions/${sessionId}/screenshot`, {
+      headers: this.headers(),
+    });
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      throw new BrowserFarmError(`GET /sessions/${sessionId}/screenshot failed: ${res.status}`, res.status, body);
+    }
+    return res.blob();
+  }
+
   // --- Internal ---
 
   private headers(): Record<string, string> {

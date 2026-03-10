@@ -6,7 +6,18 @@
     "type": "git",
     "url": "https://github.com/tangle-network/browser-farm.git"
   },
-  "keywords": ["browser", "automation", "playwright", "selenium", "appium", "safari", "ios", "android", "cdp", "webdriver"],
+  "keywords": [
+    "browser",
+    "automation",
+    "playwright",
+    "selenium",
+    "appium",
+    "safari",
+    "ios",
+    "android",
+    "cdp",
+    "webdriver"
+  ],
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -50,6 +61,7 @@
   "devDependencies": {
     "@types/node": "^25.3.5",
     "@types/ws": "^8.18.1",
+    "@vitest/coverage-v8": "^4.0.18",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"

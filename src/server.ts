@@ -15,6 +15,7 @@ import { IosSafariBackend } from "./backends/ios-safari.js";
 import { IosDeviceBackend } from "./backends/ios-device.js";
 import { SafariDesktopBackend } from "./backends/safari-desktop.js";
 import type { Backend, BrowserType } from "./backends/types.js";
+import { captureScreenshot, ScreenshotError } from "./screenshot.js";
 
 export interface AppOptions {
   port?: number;
@@ -125,41 +126,28 @@ export function createApp(opts?: AppOptions): AppInstance {
   });
 
   app.get("/sessions/:id/screenshot", requireAuth, async (c) => {
-    const session = allocator.getSession(c.req.param("id"))
-    if (!session) return c.json({ error: 'Session not found' }, 404)
+    const session = allocator.getSession(c.req.param("id"));
+    if (!session) return c.json({ error: "Session not found" }, 404);
 
-    if (session.wsEndpoint) {
-      return c.json({ error: 'Use CDP Page.captureScreenshot for WebSocket sessions' }, 400)
+    try {
+      const png = await captureScreenshot(session);
+      allocator.touchSession(session.id);
+      const ab = png.buffer.slice(png.byteOffset, png.byteOffset + png.byteLength) as ArrayBuffer;
+      return new Response(ab, {
+        status: 200,
+        headers: {
+          "Content-Type": "image/png",
+          "Content-Length": String(png.byteLength),
+          "Cache-Control": "no-store",
+        },
+      });
+    } catch (err) {
+      if (err instanceof ScreenshotError) {
+        return c.json({ error: err.message }, err.status as any);
+      }
+      log.error("GET /sessions/:id/screenshot error", { sessionId: session.id, error: String(err) });
+      return c.json({ error: "Screenshot failed" }, 500);
     }
-
-    if (!session.webdriverUrl || !session.webdriverSessionId) {
-      return c.json({ error: 'Session has no WebDriver endpoint' }, 500)
-    }
-
-    const wdScreenshotUrl = `${session.webdriverUrl}/session/${session.webdriverSessionId}/screenshot`
-    const res = await fetch(wdScreenshotUrl)
-    if (!res.ok) {
-      const body = await res.text().catch(() => '')
-      log.error('screenshot: WebDriver request failed', {
-        sessionId: session.id,
-        status: res.status,
-        body,
-      })
-      return c.json({ error: `WebDriver screenshot failed: ${res.status}` }, 502)
-    }
-
-    const json = await res.json() as { value: string }
-    if (!json.value) {
-      return c.json({ error: 'WebDriver returned empty screenshot' }, 502)
-    }
-
-    const png = Buffer.from(json.value, 'base64')
-    allocator.touchSession(session.id)
-    return c.body(png, 200, {
-      'Content-Type': 'image/png',
-      'Content-Length': String(png.byteLength),
-      'Cache-Control': 'no-store',
-    })
   });
 
   // --- Backend registry ---

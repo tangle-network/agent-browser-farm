@@ -9,6 +9,7 @@ export { AndroidDeviceBackend } from "./backends/android-device.js";
 export { IosSafariBackend } from "./backends/ios-safari.js";
 export { IosDeviceBackend } from "./backends/ios-device.js";
 export { SafariDesktopBackend } from "./backends/safari-desktop.js";
+export { captureScreenshot, ScreenshotError } from "./screenshot.js";
 export { config, type Config } from "./config.js";
 export { log } from "./log.js";
 export { BrowserFarmClient, BrowserFarmError, type CreateSessionOpts, type SessionInfo, type SessionDetails } from "./client.js";
