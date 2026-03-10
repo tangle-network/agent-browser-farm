@@ -44,6 +44,7 @@
     "build": "tsc",
     "start": "node dist/main.js",
     "test": "vitest run",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "lint": "tsc --noEmit",
@@ -62,6 +63,7 @@
     "@types/node": "^25.3.5",
     "@types/ws": "^8.18.1",
     "@vitest/coverage-v8": "^4.0.18",
+    "playwright": "^1.58.2",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"

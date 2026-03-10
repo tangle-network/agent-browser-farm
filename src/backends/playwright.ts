@@ -94,12 +94,10 @@ export class PlaywrightBackend implements Backend {
   /** Lazy-load playwright. Fails gracefully if not installed. */
   private async getPlaywright(): Promise<PlaywrightModule> {
     if (this.pw) return this.pw;
-    // Dynamic import with variable to bypass TypeScript module resolution
-    for (const pkg of ["playwright-core", "playwright"]) {
+    for (const pkg of ["playwright-core", "playwright"] as const) {
       try {
-        const mod = await (Function(`return import("${pkg}")`)() as Promise<PlaywrightModule>);
-        this.pw = mod;
-        return mod;
+        this.pw = await import(/* @vite-ignore */ pkg) as PlaywrightModule;
+        return this.pw;
       } catch {
         continue;
       }

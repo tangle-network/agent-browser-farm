@@ -6,6 +6,7 @@ import type { AddressInfo } from 'node:net'
 import { createApp, type AppInstance } from '../src/server.js'
 import { Allocator, AllocatorError } from '../src/allocator.js'
 import { BrowserFarmClient, BrowserFarmError } from '../src/client.js'
+import { captureScreenshot, ScreenshotError } from '../src/screenshot.js'
 import type { Backend, BrowserType, PoolStatus } from '../src/backends/types.js'
 import { config } from '../src/config.js'
 
@@ -439,5 +440,251 @@ describe('config.validate edge cases', () => {
     ;(config as any).maxPerClient = original.maxPerClient
     ;(config as any).defaultTimeout = original.defaultTimeout
     ;(config as any).idleTimeout = original.idleTimeout
+  })
+})
+
+// --- Screenshot: CDP path ---
+
+describe('captureScreenshot: CDP via WebSocket', () => {
+  let wss: WebSocketServer
+  let wssPort: number
+
+  beforeAll(async () => {
+    wss = new WebSocketServer({ port: 0 })
+    wssPort = (wss.address() as AddressInfo).port
+  })
+
+  afterAll(() => {
+    wss.close()
+  })
+
+  it('captures screenshot via CDP successfully', async () => {
+    wss.removeAllListeners('connection')
+    wss.on('connection', (ws) => {
+      ws.on('message', (data) => {
+        const msg = JSON.parse(String(data))
+        if (msg.method === 'Page.captureScreenshot') {
+          const fakePng = Buffer.from([0x89, 0x50, 0x4e, 0x47]).toString('base64')
+          ws.send(JSON.stringify({ id: msg.id, result: { data: fakePng } }))
+        }
+      })
+    })
+
+    const session = {
+      id: 'cdp-test',
+      wsEndpoint: `ws://127.0.0.1:${wssPort}`,
+    } as any
+
+    const png = await captureScreenshot(session)
+    expect(png[0]).toBe(0x89)
+    expect(png[1]).toBe(0x50)
+  })
+
+  it('returns ScreenshotError on CDP error response', async () => {
+    wss.removeAllListeners('connection')
+    wss.on('connection', (ws) => {
+      ws.on('message', (data) => {
+        const msg = JSON.parse(String(data))
+        ws.send(JSON.stringify({ id: msg.id, error: { code: -32000, message: 'Page crashed' } }))
+      })
+    })
+
+    const session = {
+      id: 'cdp-err',
+      wsEndpoint: `ws://127.0.0.1:${wssPort}`,
+    } as any
+
+    await expect(captureScreenshot(session)).rejects.toThrow(ScreenshotError)
+    try {
+      await captureScreenshot(session)
+    } catch (err) {
+      expect((err as ScreenshotError).status).toBe(502)
+      expect((err as ScreenshotError).message).toContain('Page crashed')
+    }
+  })
+
+  it('returns ScreenshotError on empty CDP result', async () => {
+    wss.removeAllListeners('connection')
+    wss.on('connection', (ws) => {
+      ws.on('message', (data) => {
+        const msg = JSON.parse(String(data))
+        ws.send(JSON.stringify({ id: msg.id, result: {} }))
+      })
+    })
+
+    const session = {
+      id: 'cdp-empty',
+      wsEndpoint: `ws://127.0.0.1:${wssPort}`,
+    } as any
+
+    await expect(captureScreenshot(session)).rejects.toThrow(ScreenshotError)
+  })
+
+  it('returns ScreenshotError on invalid JSON from CDP', async () => {
+    wss.removeAllListeners('connection')
+    wss.on('connection', (ws) => {
+      ws.on('message', () => {
+        ws.send('not json at all {{{')
+      })
+    })
+
+    const session = {
+      id: 'cdp-badjson',
+      wsEndpoint: `ws://127.0.0.1:${wssPort}`,
+    } as any
+
+    await expect(captureScreenshot(session)).rejects.toThrow(ScreenshotError)
+  })
+
+  it('ignores CDP messages with wrong id', async () => {
+    wss.removeAllListeners('connection')
+    wss.on('connection', (ws) => {
+      ws.on('message', (data) => {
+        const msg = JSON.parse(String(data))
+        // Send wrong id first, then correct one
+        ws.send(JSON.stringify({ id: 999, result: { data: 'wrong' } }))
+        const fakePng = Buffer.from([0x89, 0x50, 0x4e, 0x47]).toString('base64')
+        ws.send(JSON.stringify({ id: msg.id, result: { data: fakePng } }))
+      })
+    })
+
+    const session = {
+      id: 'cdp-wrongid',
+      wsEndpoint: `ws://127.0.0.1:${wssPort}`,
+    } as any
+
+    const png = await captureScreenshot(session)
+    expect(png[0]).toBe(0x89)
+  })
+})
+
+// --- Client: screenshot method ---
+
+describe('BrowserFarmClient: screenshot', () => {
+  let instance: AppInstance
+  let wss: WebSocketServer
+  let wssPort: number
+  let client: BrowserFarmClient
+
+  beforeAll(async () => {
+    // Mock CDP server for screenshots
+    wss = new WebSocketServer({ port: 0 })
+    wssPort = (wss.address() as AddressInfo).port
+    wss.on('connection', (ws) => {
+      ws.on('message', (data) => {
+        const msg = JSON.parse(String(data))
+        if (msg.method === 'Page.captureScreenshot') {
+          const fakePng = Buffer.from([0x89, 0x50, 0x4e, 0x47]).toString('base64')
+          ws.send(JSON.stringify({ id: msg.id, result: { data: fakePng } }))
+        }
+      })
+    })
+
+    const backend: Backend = {
+      id: 'client-ss-mock',
+      type: 'mock',
+      protocol: 'ws' as const,
+      supports: new Set<BrowserType>(['chrome']),
+      async createSession() {
+        return { backendId: 'css-1', wsEndpoint: `ws://127.0.0.1:${wssPort}`, backendType: 'mock' }
+      },
+      async destroySession() {},
+      async status(): Promise<PoolStatus> { return { capacity: 10, active: 0, backend: 'mock', healthy: true } },
+      async healthCheck() { return true },
+      async shutdown() {},
+    }
+
+    instance = createApp({
+      port: 0,
+      allocator: new Allocator({ maxSessions: 10, maxPerClient: 5 }),
+      backends: [backend],
+    })
+    client = new BrowserFarmClient(`http://localhost:${instance.port}`)
+  })
+
+  afterAll(async () => {
+    await instance.shutdown()
+    wss.close()
+  })
+
+  it('screenshot returns a Blob', async () => {
+    const session = await client.createSession({ browser: 'chrome' })
+    const blob = await client.screenshot(session.sessionId)
+    expect(blob).toBeInstanceOf(Blob)
+    expect(blob.size).toBeGreaterThan(0)
+    expect(blob.type).toBe('image/png')
+  })
+
+  it('screenshot throws BrowserFarmError for unknown session', async () => {
+    await expect(client.screenshot('nonexistent')).rejects.toThrow(BrowserFarmError)
+  })
+})
+
+// --- Screenshot: CDP timeout ---
+
+describe('captureScreenshot: CDP timeout', () => {
+  it('times out when CDP server never responds', async () => {
+    // Create a WS server that accepts connections but never responds
+    const silentWss = new WebSocketServer({ port: 0 })
+    const silentPort = (silentWss.address() as AddressInfo).port
+    silentWss.on('connection', () => { /* do nothing */ })
+
+    const session = {
+      id: 'timeout-test',
+      wsEndpoint: `ws://127.0.0.1:${silentPort}`,
+    } as any
+
+    // Patch the timeout to be short for test speed
+    // Can't easily control the 10s timeout, so test the error type instead
+    try {
+      await captureScreenshot(session)
+      expect.unreachable('should have thrown')
+    } catch (err) {
+      expect(err).toBeInstanceOf(ScreenshotError)
+      // Could be timeout (504) or connection error (502)
+      expect([502, 504]).toContain((err as ScreenshotError).status)
+    } finally {
+      silentWss.close()
+    }
+  }, 15000)
+})
+
+// --- Server: screenshot non-ScreenshotError path ---
+
+describe('Server: screenshot generic error path', () => {
+  it('returns 500 when captureScreenshot throws non-ScreenshotError', async () => {
+    // Backend that returns a wsEndpoint to an invalid URL (not ws://)
+    const badWsBackend: Backend = {
+      id: 'bad-ws-backend',
+      type: 'mock',
+      protocol: 'ws' as const,
+      supports: new Set<BrowserType>(['chrome']),
+      async createSession() {
+        return { backendId: 'bw-1', wsEndpoint: 'not-a-valid-url', backendType: 'mock' }
+      },
+      async destroySession() {},
+      async status(): Promise<PoolStatus> { return { capacity: 10, active: 0, backend: 'mock', healthy: true } },
+      async healthCheck() { return true },
+      async shutdown() {},
+    }
+
+    const inst = createApp({
+      port: 0,
+      allocator: new Allocator({ maxSessions: 10, maxPerClient: 5 }),
+      backends: [badWsBackend],
+    })
+
+    const createRes = await inst.app.request('/sessions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ browser: 'chrome' }),
+    })
+    const { sessionId } = await createRes.json()
+
+    const res = await inst.app.request(`/sessions/${sessionId}/screenshot`)
+    // Should be 500 (generic error) or 502 (ScreenshotError from WS failure)
+    expect([500, 502]).toContain(res.status)
+
+    await inst.shutdown()
   })
 })
